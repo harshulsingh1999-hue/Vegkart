@@ -1,0 +1,7 @@
+{
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "name": "Veggie-Verse",
+  "description": "Fresh Vegetable Delivery App"
+}
