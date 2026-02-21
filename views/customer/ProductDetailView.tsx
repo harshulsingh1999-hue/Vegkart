@@ -2,11 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../store';
 import { View, Product } from '../../types';
-import { formatCurrency, resolveRegionalPrice } from '../../utils';
+import { formatCurrency, resolveRegionalPrice, isVideo } from '../../utils';
 import { useToast } from '../../providers/ToastProvider';
 import { XMarkIcon, ClipboardListIcon, UserCircleIcon } from '../../components/ui/Icons';
-
-const isVideo = (url: string) => url.match(/\.(mp4|webm|ogg)$/i) || url.includes('video');
 
 const ZoomableMedia: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
     const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);

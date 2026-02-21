@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useStore } from '../store';
 import { View } from '../types';
@@ -5,7 +6,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 // Dynamically import views for better code splitting
-const ProductList = React.lazy(() => import('../views/ProductList'));
+const HomeView = React.lazy(() => import('../views/customer/HomeView'));
 const CartView = React.lazy(() => import('../views/customer/CartView'));
 const CheckoutView = React.lazy(() => import('../views/customer/CheckoutView'));
 const OrderHistory = React.lazy(() => import('../views/customer/OrderHistory'));
@@ -22,7 +23,7 @@ const CustomerLayout: React.FC = () => {
     const renderView = () => {
         switch (currentView) {
             case View.HOME:
-                return <ProductList />;
+                return <HomeView />;
             case View.PRODUCT_DETAIL:
                 // Add key to force remount when selected product changes
                 return <ProductDetailView key={selectedProductId} />;
@@ -36,7 +37,7 @@ const CustomerLayout: React.FC = () => {
                 return <ProfileView />;
             // Add other customer-facing views here
             default:
-                return <ProductList />;
+                return <HomeView />;
         }
     };
 

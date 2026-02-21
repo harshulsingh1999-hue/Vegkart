@@ -8,76 +8,82 @@ export interface Address {
   pincode: string;
   city: string;
   state: string;
-  // Added for Route Optimization
   coordinates?: {
     lat: number;
     lng: number;
   };
 }
 
+export interface Session {
+    id: string;
+    device: string;
+    browser: string;
+    location: string;
+    ip: string;
+    lastActive: number;
+    isCurrent: boolean;
+}
+
 export interface User {
   id: string;
   phone: string;
   name: string;
-  role: Role; // Active role for the current session
-  roles: Role[]; // All available roles for this user
+  role: Role;
+  roles: Role[];
   isProfileComplete: boolean;
   addresses: Address[];
-  language?: string; // Added Language Preference
-  // User Dashboard Features
+  language?: string;
   walletBalance?: number;
-  wishlist?: string[]; // Array of Product IDs
+  wishlist?: string[];
   totalSavings?: number;
-  // Additional role-specific details
   businessName?: string;
   gstin?: string;
   vehicleDetails?: string;
-  licenseNumber?: string; // For delivery
-  employeeId?: string; // For staff/admin
-  department?: string; // For staff
-}
-
-export interface Review {
-  id: string;
-  author: string;
-  rating: number; // 1 to 5
-  comment: string;
-  date: string;
+  licenseNumber?: string;
+  employeeId?: string;
+  department?: string;
+  // Security
+  riskScore?: number;
+  isFlagged?: boolean;
+  // Added fields
+  email?: string;
+  region?: string;
+  authProvider?: string;
+  sessions?: Session[];
 }
 
 export interface ProductVariant {
     id: string;
-    weight: string; // e.g., "500g", "1kg"
+    weight: string;
     price: number;
     stock: number;
-    discount?: number; // Added discount percentage
+    discount?: number;
 }
 
-// --- NEW: Advanced Inventory Logic ---
 export interface InventoryRule {
     id: string;
-    variantId: string; // Links to a specific variant (e.g. 1kg)
+    variantId: string;
     scope: 'STATE' | 'CITY' | 'PINCODE';
-    locationName: string; // "Maharashtra", "Mumbai", or "400001"
+    locationName: string;
     price: number;
     stock: number;
-    discount: number; // Percentage
+    discount: number;
 }
 
 export interface Product {
   id: string;
   name: string;
   description: string;
-  richDescription?: string; // HTML string for rich text details
+  richDescription?: string;
   category: string;
-  imageUrls: string[]; // Can contain image or video URLs
+  imageUrls: string[];
   variants: ProductVariant[];
-  inventoryRules?: InventoryRule[]; // New: Granular control
+  inventoryRules?: InventoryRule[];
   rating: number;
-  reviews: Review[];
+  reviews: any[];
   seller: string;
-  sellerId?: string; // Added for stable linking
-  availablePincodes: string[]; // Kept for backward compatibility/quick search
+  sellerId?: string;
+  availablePincodes: string[];
 }
 
 export interface CartItem {
@@ -90,13 +96,11 @@ export interface CartItem {
   quantity: number;
 }
 
-// New Interface for Tax Configuration
 export interface TaxConfig {
-    gstRate: number; // Percentage
-    serviceTaxRate: number; // Percentage (Default 3%)
+    gstRate: number;
+    serviceTaxRate: number;
 }
 
-// Payment Configuration for Admin Control
 export interface PaymentMethodConfig {
     id: string;
     label: string;
@@ -105,18 +109,16 @@ export interface PaymentMethodConfig {
     isEnabled: boolean;
 }
 
-// --- COUPON INTERFACE ---
 export interface Coupon {
     id: string;
-    code: string; // e.g., WELCOME50
+    code: string;
     type: 'FLAT' | 'PERCENTAGE';
-    value: number; // Amount or Percent
+    value: number;
     description: string;
     minOrderValue?: number;
     isActive: boolean;
 }
 
-// --- GLOBAL APP FEATURE FLAGS ---
 export interface AppSettings {
     enableMaintenanceMode: boolean;
     allowNewRegistrations: boolean;
@@ -126,7 +128,6 @@ export interface AppSettings {
     showLowStockWarnings: boolean;
 }
 
-// New Interface for Advanced Cart/Checkout Logic
 export interface CheckoutSession {
     subtotal: number;
     tax: number;
@@ -136,6 +137,39 @@ export interface CheckoutSession {
     couponCode?: string;
 }
 
+// --- NEW TRANSACTION INTERFACES ---
+export interface Transaction {
+    id: string;
+    orderId: string;
+    userId: string;
+    amount: number;
+    method: string;
+    status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+    gatewayRef: string;
+    timestamp: number;
+    metadata?: any;
+}
+
+export interface SecurityLog {
+    id: string;
+    level: 'INFO' | 'WARN' | 'CRITICAL';
+    event: string;
+    ip: string; // Simulated
+    userId?: string;
+    timestamp: number;
+    resolved: boolean;
+}
+
+export interface SecurityThreat {
+    id: string;
+    type: 'VIRUS' | 'MALWARE' | 'CORRUPTION' | 'DDOS' | 'INTRUSION';
+    severity: 'HIGH' | 'MEDIUM' | 'LOW';
+    description: string;
+    target: 'USER' | 'PRODUCT' | 'ORDER' | 'SYSTEM';
+    targetId: string;
+    detectedAt: number;
+}
+
 export interface Order {
   id: string;
   userId: string;
@@ -143,21 +177,19 @@ export interface Order {
   total: number;
   date: string;
   deliveryAddress: Address;
-  // Updated status flow
   status: 'Placed' | 'Preparing' | 'Ready for Pickup' | 'Out for Delivery' | 'Delivered' | 'Cancelled' | 'Returned';
-  paymentMethod: string; // Changed to string to support dynamic methods
+  paymentMethod: string;
   appliedCoupon?: string;
   discount?: number;
   deliveryOtp: string;
-  deliveryAgentId?: string; // Assigned delivery partner ID
-  // Return / Refund Logic
+  deliveryAgentId?: string;
   returnStatus?: 'Requested' | 'Approved' | 'Rejected' | 'Refunded';
   returnReason?: string;
-  // Cash Management
-  isDeposited?: boolean; // True if COD cash has been handed over to office
+  isDeposited?: boolean;
+  transactionId?: string; // Link to financial record
+  region?: string;
 }
 
-// --- NEW MARKETING TYPES ---
 export type BannerType = 'HERO' | 'TODAY_OFFER' | 'WEEKLY_OFFER' | 'FULLSCREEN_AD';
 
 export interface Banner {
@@ -166,9 +198,9 @@ export interface Banner {
     title: string;
     subtitle?: string;
     imageUrl: string;
-    discountText?: string; // e.g. "50% OFF" or "Flat ₹100"
+    discountText?: string;
     couponCode?: string;
-    themeClass: string; // CSS class for background/gradients
+    themeClass: string;
     isActive: boolean;
 }
 
@@ -177,15 +209,13 @@ export enum View {
   CART = 'CART',
   CHECKOUT = 'CHECKOUT',
   ORDERS = 'ORDERS',
-  PROFILE = 'PROFILE', // Now acts as Dashboard
+  PROFILE = 'PROFILE',
   PRODUCT_DETAIL = 'PRODUCT_DETAIL',
   ORDER_TRACKING = 'ORDER_TRACKING',
-  // Dashboard Sub-Views
   WALLET = 'WALLET',
   WISHLIST = 'WISHLIST',
   SUPPORT = 'SUPPORT',
   NOTIFICATIONS = 'NOTIFICATIONS',
-  // Profile sub-views
   SECURITY = 'SECURITY',
   PAYMENT = 'PAYMENT',
   PRIVACY = 'PRIVACY',

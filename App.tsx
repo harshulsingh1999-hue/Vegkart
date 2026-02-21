@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import AppRouter from './router';
 import { ToastProvider, useToast } from './providers/ToastProvider';
+import { GlobalSystemProvider, useGlobalSystem } from './providers/GlobalSystemProvider';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useStore, verifyDeviceLock } from './store';
 import DataManager from './components/DataManager';
-import { FingerPrintIcon, LockClosedIcon, ShieldCheckIcon, DevicePhoneMobileIcon } from './components/ui/Icons';
+import { FingerPrintIcon, LockClosedIcon, ShieldCheckIcon, DevicePhoneMobileIcon, CloudArrowUpIcon } from './components/ui/Icons';
 
 const ExitPreviewButton = () => {
-    // Optimized selectors
     const originalUser = useStore(state => state.originalUser);
     const endPreview = useStore(state => state.endPreview);
     
@@ -25,6 +25,19 @@ const ExitPreviewButton = () => {
                 </svg>
                 Exit Preview
             </button>
+        </div>
+    );
+};
+
+// New Component: Offline Banner
+const NetworkStatusBanner = () => {
+    const { isOnline, t } = useGlobalSystem();
+    if (isOnline) return null;
+
+    return (
+        <div className="fixed bottom-0 left-0 right-0 bg-red-600 text-white text-xs font-bold text-center py-2 z-[10000] animate-fade-in flex items-center justify-center gap-2">
+            <CloudArrowUpIcon className="w-4 h-4 animate-bounce" />
+            {t('offline_mode')}
         </div>
     );
 };
@@ -137,6 +150,7 @@ const MainAppContent: React.FC = () => {
         <>
             {isBiometricEnabled && isAppLocked && <BiometricLock />}
             <DataManager />
+            <NetworkStatusBanner />
             <AppRouter />
             <ExitPreviewButton />
         </>
@@ -146,9 +160,11 @@ const MainAppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <MainAppContent />
-      </ToastProvider>
+      <GlobalSystemProvider>
+        <ToastProvider>
+            <MainAppContent />
+        </ToastProvider>
+      </GlobalSystemProvider>
     </ErrorBoundary>
   );
 };

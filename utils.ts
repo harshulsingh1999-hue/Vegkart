@@ -9,6 +9,12 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
+// Check if URL is a video
+export const isVideo = (url: string | undefined): boolean => {
+    if (!url) return false;
+    return !!(url.match(/\.(mp4|webm|ogg)$/i) || url.includes('video'));
+};
+
 // Time ago function
 export const timeAgo = (dateString: string): string => {
   const date = new Date(dateString);

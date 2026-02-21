@@ -1,9 +1,9 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useStore } from '../store';
 import { Product, ProductVariant, Order, InventoryRule } from '../types';
 import { useToast } from '../providers/ToastProvider';
-import { formatCurrency, timeAgo, checkDateFilter, getDateOnly, getTimeOnly } from '../utils';
+import { formatCurrency, timeAgo, checkDateFilter, getDateOnly, getTimeOnly, isVideo } from '../utils';
 import { locationDB } from '../data/locations';
 import { 
     PencilIcon, TrashIcon, PlusIcon, CheckCircleIcon, XMarkIcon, ShopIcon,
@@ -23,8 +23,6 @@ interface ProductFormProps {
     editProduct: Product | null;
     isCloneMode?: boolean;
 }
-
-const isVideo = (url: string) => url?.match(/\.(mp4|webm|ogg)$/i) || url?.includes('video');
 
 // --- SUB-COMPONENTS ---
 
@@ -687,9 +685,6 @@ const SellerDashboard: React.FC = () => {
     const bulkImportProducts = useStore(state => state.bulkImportProducts);
     const logout = useStore(state => state.logout);
     const { showToast } = useToast();
-
-    // Hidden File Input Ref
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'history' | 'profile'>('overview');
     const [searchTerm, setSearchTerm] = useState('');

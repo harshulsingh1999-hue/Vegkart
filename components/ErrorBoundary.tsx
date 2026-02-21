@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { useStore } from '../store';
 import { WrenchScrewdriverIcon, ArrowPathIcon, ExclamationCircleIcon } from './ui/Icons';
@@ -12,10 +13,13 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    errorInfo: ''
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      errorInfo: ''
+    };
+  }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, errorInfo: error.message };
@@ -32,10 +36,9 @@ class ErrorBoundary extends Component<Props, State> {
 
     if (result.action === 'RELOAD') {
         // Attempt immediate recovery by reloading the page
-        // This refreshes React state and allows Zustand to hydrate with the fixed (cleaned) data
         setTimeout(() => {
             window.location.reload();
-        }, 500); // Short delay to allow state persist to write
+        }, 500); 
     } 
     // If action is NONE, we stay on the error screen (Max crashes reached)
   }

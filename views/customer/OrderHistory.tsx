@@ -5,71 +5,12 @@ import { formatCurrency, timeAgo, checkDateFilter, getDateOnly, getTimeOnly } fr
 import { Order, User } from '../../types';
 import { useToast } from '../../providers/ToastProvider';
 import { XMarkIcon, TruckIcon, UserCircleIcon, PhoneIcon, ClipboardListIcon, CheckCircleIcon } from '../../components/ui/Icons';
+import { MAP_STYLES, CityBlock, generateCityLayout } from '../../components/MapShared';
 
 // --- VISUALIZATION MAP COMPONENT ---
-// Reusing logic from DeliveryDashboard for consistency
-const MAP_STYLES = {
-    water: '#aadaff',
-    land: '#eef0f3',
-    park: '#c5e8c5',
-    building: '#e1e3e6',
-    buildingStroke: '#d6d6d6',
-    roadOutline: '#ffffff',
-    roadFill: '#ffffff',
-    mainRoadFill: '#f8c967'
-};
-
-const CityBlock = React.memo(({ x, y, width, height, type }: any) => {
-    const isPark = type === 'park';
-    const fill = isPark ? MAP_STYLES.park : MAP_STYLES.building;
-    const stroke = isPark ? 'none' : MAP_STYLES.buildingStroke;
-    const depth = isPark ? 0 : (width * 0.05);
-
-    return (
-        <g>
-            {!isPark && depth > 0 && (
-                <path d={`M ${x} ${y+height} L ${x+width} ${y+height} L ${x+width} ${y+height+depth} L ${x} ${y+height+depth} Z`} fill="#c8c8c8" />
-            )}
-            <rect x={x} y={y} width={width} height={height} rx={isPark ? 2 : 0.5} fill={fill} stroke={stroke} strokeWidth={isPark ? 0 : 0.2} />
-        </g>
-    );
-});
-
 const TrackingMap = ({ order, deliveryPartner }: { order: Order, deliveryPartner?: User }) => {
     // Generate deterministic layout based on pincode
-    const seed = order.deliveryAddress.pincode.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
-    
-    const { blocks, roads } = useMemo(() => {
-        let s = seed;
-        const rng = () => { s = Math.sin(s) * 10000; return s - Math.floor(s); };
-        
-        const b = [];
-        const r = [];
-        const cols = 5, rows = 5, gap = 8;
-        const cw = (100 - (cols+1)*gap)/cols;
-        const ch = (100 - (rows+1)*gap)/rows;
-
-        // Blocks
-        for(let c=0; c<cols; c++) {
-            for(let row=0; row<rows; row++) {
-                if (rng() > 0.1) {
-                    b.push({ x: gap + c*(cw+gap), y: gap + row*(ch+gap), w: cw, h: ch, type: rng() > 0.8 ? 'park' : 'bld' });
-                }
-            }
-        }
-        
-        // Roads
-        for(let row=0; row<=rows; row++) {
-            const isMain = row === Math.floor(rows/2);
-            r.push({ x1: 0, y1: row*(ch+gap) + gap/2, x2: 100, y2: row*(ch+gap) + gap/2, width: isMain ? gap * 1.2 : gap, isMain });
-        }
-        for(let c=0; c<=cols; c++) {
-            const isMain = c === Math.floor(cols/2);
-            r.push({ x1: c*(cw+gap) + gap/2, y1: 0, x2: c*(cw+gap) + gap/2, y2: 100, width: isMain ? gap * 1.2 : gap, isMain });
-        }
-
-        return { blocks: b, roads: r };
-    }, [seed]);
+    const { blocks, roads } = useMemo(() => generateCityLayout(order.deliveryAddress.pincode, { cols: 5, rows: 5, gap: 8 }), [order.deliveryAddress.pincode]);
 
     return (
         <div className="relative w-full h-full bg-[#f0f2f5] overflow-hidden">
@@ -81,7 +22,7 @@ const TrackingMap = ({ order, deliveryPartner }: { order: Order, deliveryPartner
                     <line key={i} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke={r.isMain ? MAP_STYLES.mainRoadFill : MAP_STYLES.roadFill} strokeWidth={r.width} strokeLinecap="square" />
                 ))}
 
-                {blocks.map((b, i) => <CityBlock key={i} {...b} />)}
+                {blocks.map((b, i) => <CityBlock key={i} x={b.x} y={b.y} width={b.w} height={b.h} type={b.type} />)}
                 
                 {/* Route Path */}
                 <path d="M 20 20 Q 50 20 50 50 T 80 80" fill="none" stroke="rgba(66, 133, 244, 0.3)" strokeWidth="3" strokeLinecap="round" />
@@ -122,7 +63,7 @@ const TrackingMap = ({ order, deliveryPartner }: { order: Order, deliveryPartner
             {/* Live Status Overlay */}
             <div className="absolute top-3 left-3 right-3 flex justify-between pointer-events-none">
                 <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-sm text-green-700 border border-green-100 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Live Tracking
+                    <span className="w-1.5 h-1.5 bg-green-50 rounded-full animate-pulse"></span> Live Tracking
                 </div>
                 <div className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-sm text-gray-700 border border-gray-200">
                     ETA: 12 Mins

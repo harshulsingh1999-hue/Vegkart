@@ -4,67 +4,18 @@ import { useStore } from '../store';
 import { Address } from '../types';
 import { useToast } from '../providers/ToastProvider';
 import { LocationMarkerIcon, PlusIcon } from '../components/ui/Icons';
+import { MAP_STYLES, CityBlock, generateCityLayout } from '../components/MapShared';
 
 // --- VISUALIZATION HELPERS ---
 
-const MAP_STYLES = {
-    water: '#aadaff',
-    land: '#eef0f3',
-    park: '#c5e8c5', 
-    building: '#e1e3e6',
-    roadFill: '#ffffff',
-    roadStroke: '#e0e0e0',
-    textRoad: '#757575',
-    textColony: '#9aa0a6'
-};
-
-const CityBlock = ({ x, y, width, height, type }: any) => {
-    const isPark = type === 'park';
-    const fill = isPark ? MAP_STYLES.park : MAP_STYLES.building;
-    const stroke = isPark ? 'none' : '#d6d6d6';
-    
-    return (
-        <rect 
-            x={x} 
-            y={y} 
-            width={width} 
-            height={height} 
-            rx={isPark ? 2 : 0.5} 
-            fill={fill} 
-            stroke={stroke} 
-            strokeWidth={isPark ? 0 : 0.2}
-        />
-    );
-};
-
 const VisualMapPlaceholder = ({ pincode, active }: { pincode: string, active: boolean }) => {
-    // Deterministic Map Generation
-    const seed = pincode.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
-    const { blocks, horizontalRoads, verticalRoads } = useMemo(() => {
-        const b = [];
-        const cols = 6, rows = 3, gap = 8;
-        const cw = (100 - (cols+1)*gap)/cols;
-        const ch = (100 - (rows+1)*gap)/rows;
-        let s = seed;
-        const rng = () => { s = Math.sin(s) * 10000; return s - Math.floor(s); };
+    // Deterministic Map Generation using shared utility
+    const { blocks, roads } = useMemo(() => generateCityLayout(pincode, { cols: 6, rows: 3, gap: 8 }), [pincode]);
 
-        for(let c=0; c<cols; c++) {
-            for(let r=0; r<rows; r++) {
-                // Randomly skip some blocks
-                if (rng() > 0.1) {
-                    b.push({ x: gap + c*(cw+gap), y: gap + r*(ch+gap), w: cw, h: ch, type: rng() > 0.7 ? 'park' : 'bld' });
-                }
-            }
-        }
-        
-        const hRoads = [];
-        for(let r=0; r<=rows; r++) hRoads.push(r*(ch+gap) + gap/2);
-        
-        const vRoads = [];
-        for(let c=0; c<=cols; c++) vRoads.push(c*(cw+gap) + gap/2);
-
-        return { blocks: b, horizontalRoads: hRoads, verticalRoads: vRoads };
-    }, [seed]);
+    // Separate roads for this specific visual style (custom rendering for this component)
+    // The shared generator returns lines (x1, y1, x2, y2). We can use them directly.
+    // However, this component had a unique style with 'Outline First' then 'Fill Second'.
+    // We can adapt the shared data to this rendering style.
 
     return (
         <div className={`w-full h-32 bg-[#eef0f3] rounded-xl overflow-hidden relative border-2 transition-all ${active ? 'border-green-500 opacity-100 shadow-md' : 'border-transparent opacity-60'}`}>
@@ -73,30 +24,32 @@ const VisualMapPlaceholder = ({ pincode, active }: { pincode: string, active: bo
                 <rect x="0" y="0" width="100" height="50" fill={MAP_STYLES.land} />
                 
                 {/* Buildings/Parks */}
-                {blocks.map((b, i) => <CityBlock key={i} {...b} />)}
+                {blocks.map((b, i) => <CityBlock key={i} x={b.x} y={b.y} width={b.w} height={b.h} type={b.type} />)}
                 
                 {/* Roads: Outline First */}
-                {horizontalRoads.map((y, i) => <line key={`h-out-${i}`} x1="0" y1={y} x2="100" y2={y} stroke={MAP_STYLES.roadStroke} strokeWidth="6" />)}
-                {verticalRoads.map((x, i) => <line key={`v-out-${i}`} x1={x} y1="0" x2={x} y2="50" stroke={MAP_STYLES.roadStroke} strokeWidth="6" />)}
+                {roads.map((r, i) => (
+                    <line key={`r-out-${i}`} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke={MAP_STYLES.roadStroke} strokeWidth={r.width + 2} strokeLinecap="square" />
+                ))}
                 
                 {/* Roads: Fill Second */}
-                {horizontalRoads.map((y, i) => <line key={`h-fill-${i}`} x1="0" y1={y} x2="100" y2={y} stroke={MAP_STYLES.roadFill} strokeWidth="4" />)}
-                {verticalRoads.map((x, i) => <line key={`v-fill-${i}`} x1={x} y1="0" x2={x} y2="50" stroke={MAP_STYLES.roadFill} strokeWidth="4" />)}
+                {roads.map((r, i) => (
+                    <line key={`r-fill-${i}`} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke={MAP_STYLES.roadFill} strokeWidth={r.width} strokeLinecap="square" />
+                ))}
                 
                 {/* Minimal Street Name Labels */}
-                {horizontalRoads.map((y, i) => (
-                    i % 2 !== 0 && 
+                {roads.filter((_, i) => i % 3 === 0).map((r, i) => (
                     <text 
-                        key={`t-h-${i}`} 
-                        x="50" 
-                        y={y} 
+                        key={`t-${i}`} 
+                        x={(r.x1+r.x2)/2} 
+                        y={(r.y1+r.y2)/2} 
                         fontSize="2.5" 
                         fill="#9aa0a6" 
                         textAnchor="middle" 
                         dominantBaseline="middle"
                         style={{ pointerEvents: 'none' }}
+                        transform={r.isVertical ? `rotate(90, ${(r.x1+r.x2)/2}, ${(r.y1+r.y2)/2})` : ''}
                     >
-                        Road {i+1}
+                        {r.name || `Road ${i+1}`}
                     </text>
                 ))}
             </svg>
